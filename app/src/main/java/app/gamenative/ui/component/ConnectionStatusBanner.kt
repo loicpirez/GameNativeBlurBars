@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.gamenative.R
+import app.gamenative.PrefManager
 import app.gamenative.ui.enums.ConnectionState
 import app.gamenative.ui.theme.PluviaTheme
 
@@ -59,8 +60,10 @@ fun ConnectionStatusBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isVisible = connectionState == ConnectionState.CONNECTING ||
-                    connectionState == ConnectionState.DISCONNECTED
+    val isVisible = PrefManager.quietStartupSettings.value.showConnectionWarning(
+        connectionState == ConnectionState.CONNECTING,
+        connectionState == ConnectionState.DISCONNECTED,
+    )
 
     AnimatedVisibility(
         visible = isVisible,

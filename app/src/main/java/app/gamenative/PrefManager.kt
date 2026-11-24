@@ -16,6 +16,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.gamenative.data.EulaInfo
+import app.gamenative.data.QuietStartupSettings
 import app.gamenative.data.GameSource
 import app.gamenative.data.SteamApp
 import app.gamenative.data.filterForCountry
@@ -71,8 +72,42 @@ object PrefManager {
 
     private lateinit var dataStore: DataStore<Preferences>
 
+    private val SKIP_LOGIN_SCREEN = booleanPreferencesKey("blur_bars_skip_login_screen")
+    private val DISABLE_UPDATE_CHECKS = booleanPreferencesKey("blur_bars_disable_update_checks")
+    private val HIDE_CONNECTION_BANNERS = booleanPreferencesKey("blur_bars_hide_connection_banners")
+    private val quietStartupState = mutableStateOf(QuietStartupSettings())
+    val quietStartupSettings: androidx.compose.runtime.State<QuietStartupSettings> get() = quietStartupState
+
+    internal fun reloadQuietStartupSettings() {
+        quietStartupState.value = QuietStartupSettings(
+            getPref(SKIP_LOGIN_SCREEN, false),
+            getPref(DISABLE_UPDATE_CHECKS, false),
+            getPref(HIDE_CONNECTION_BANNERS, false),
+        )
+    }
+
+    var skipLoginScreen: Boolean
+        get() = quietStartupState.value.skipLoginScreen
+        set(value) {
+            quietStartupState.value = quietStartupState.value.copy(skipLoginScreen = value)
+            setPref(SKIP_LOGIN_SCREEN, value)
+        }
+    var disableUpdateChecks: Boolean
+        get() = quietStartupState.value.disableUpdateChecks
+        set(value) {
+            quietStartupState.value = quietStartupState.value.copy(disableUpdateChecks = value)
+            setPref(DISABLE_UPDATE_CHECKS, value)
+        }
+    var hideConnectionBanners: Boolean
+        get() = quietStartupState.value.hideConnectionBanners
+        set(value) {
+            quietStartupState.value = quietStartupState.value.copy(hideConnectionBanners = value)
+            setPref(HIDE_CONNECTION_BANNERS, value)
+        }
+
     fun init(context: Context) {
         dataStore = context.datastore
+        reloadQuietStartupSettings()
 
         // Note: Should remove after a few release versions. we've moved to encrypted values.
         val oldPassword = stringPreferencesKey("password")
@@ -97,6 +132,7 @@ object PrefManager {
     }
 
     fun clearPreferences() {
+        quietStartupState.value = QuietStartupSettings()
         scope.launch {
             dataStore.edit { it.clear() }
         }

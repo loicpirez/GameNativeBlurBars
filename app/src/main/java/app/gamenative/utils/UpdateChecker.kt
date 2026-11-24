@@ -3,6 +3,7 @@ package app.gamenative.utils
 import android.content.Context
 import app.gamenative.BuildConfig
 import app.gamenative.Constants
+import app.gamenative.PrefManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -27,14 +28,19 @@ object UpdateChecker {
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    suspend fun checkForUpdate(context: Context): UpdateInfo? = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdate(
+        context: Context,
+        endpoint: String = Constants.Misc.UPDATE_CHECK_URL,
+        client: OkHttpClient = httpClient,
+    ): UpdateInfo? = withContext(Dispatchers.IO) {
+        if (PrefManager.disableUpdateChecks) return@withContext null
         try {
-            val url = "${Constants.Misc.UPDATE_CHECK_URL}?versionCode=${BuildConfig.VERSION_CODE}&versionName=${BuildConfig.VERSION_NAME}"
+            val url = "$endpoint?versionCode=${BuildConfig.VERSION_CODE}&versionName=${BuildConfig.VERSION_NAME}"
             val request = Request.Builder()
                 .url(url)
                 .build()
 
-            val response = httpClient.newCall(request).execute()
+            val response = client.newCall(request).execute()
             
             if (response.isSuccessful) {
                 val body = response.body?.string()

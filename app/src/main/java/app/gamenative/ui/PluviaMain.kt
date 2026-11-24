@@ -522,6 +522,7 @@ fun PluviaMain(
     var gameBackAction by remember { mutableStateOf<() -> Unit?>({}) }
 
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    val quietStartup by PrefManager.quietStartupSettings
 
     var openContainerConfigForAppId by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -546,8 +547,13 @@ fun PluviaMain(
         }
     }
 
-    // Check for updates on app start
-    LaunchedEffect(Unit) {
+    // Clear automatic update prompts when the preference is changed.
+    LaunchedEffect(quietStartup.disableUpdateChecks) {
+        if (quietStartup.disableUpdateChecks) {
+            updateInfo = null
+            viewModel.setUpdateInfo(null)
+            return@LaunchedEffect
+        }
         if (BuildConfig.MODERN_ANDROID || BuildConfig.XR_BUILD) return@LaunchedEffect
         val checkedUpdateInfo = UpdateChecker.checkForUpdate(context)
         if (checkedUpdateInfo != null) {
@@ -2166,15 +2172,14 @@ fun PluviaMain(
             }
 
             val startDestination = rememberSaveable {
-                when {
-                    SteamService.isLoggedIn -> PluviaScreen.Home.route + "?offline=false"
-                    // skip login screen if any service has stored credentials
-                    SteamUtils.hasStoredCredentials() ||
+                val storedCredentials = SteamUtils.hasStoredCredentials() ||
                         GOGService.hasStoredCredentials(context) ||
                         EpicService.hasStoredCredentials(context) ||
-                        AmazonService.hasStoredCredentials(context) ->
-                        PluviaScreen.Home.route + "?offline=true"
-                    else -> PluviaScreen.LoginUser.route
+                        AmazonService.hasStoredCredentials(context)
+                when (quietStartup.initialLibraryMode(SteamService.isLoggedIn, storedCredentials)) {
+                    app.gamenative.data.StartupLibraryMode.ONLINE -> PluviaScreen.Home.route + "?offline=false"
+                    app.gamenative.data.StartupLibraryMode.OFFLINE -> PluviaScreen.Home.route + "?offline=true"
+                    app.gamenative.data.StartupLibraryMode.LOGIN -> PluviaScreen.LoginUser.route
                 }
             }
 
@@ -2221,7 +2226,7 @@ fun PluviaMain(
                         val shouldShowDialogs = !isOffline || !SteamUtils.hasStoredCredentials()
 
                         if (shouldShowDialogs && !state.annoyingDialogShown && PluviaApp.xEnvironment == null && !SteamService.keepAlive && !MainActivity.wasLaunchedViaExternalIntent) {
-                            val currentUpdateInfo = updateInfo
+                            val currentUpdateInfo = updateInfo.takeUnless { quietStartup.disableUpdateChecks }
                             if (currentUpdateInfo != null) {
                                 viewModel.setAnnoyingDialogShown(true)
                                 msgDialogState = MessageDialogState(

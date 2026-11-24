@@ -25,7 +25,25 @@ ensuite. Les transformations souris/tactile et les autres effets restent ceux
 de GameNative. L'activation quitte le scanout direct ; sa désactivation le rend
 à nouveau possible si aucun autre effet ne demande le compositeur.
 
-## Construction
+## Démarrage et connexion — version 1.4.1-blur-bars.2
+
+Dans **Paramètres → Interface**, trois interrupteurs globaux indépendants :
+
+- **Passer l’écran de connexion au démarrage** : mémorise l’équivalent de
+  « Skip login » et ouvre la bibliothèque. Une session Steam déjà connectée
+  reste en ligne ; les connexions manuelles restent accessibles depuis Comptes.
+- **Désactiver la recherche de mises à jour** : bloque la requête HTTP de
+  vérification de l’application et ses invitations de mise à jour.
+- **Masquer les bannières de connexion** : cache les états connexion/déconnexion
+  Steam et le texte de déconnexion du formulaire ; les commandes manuelles de
+  connexion restent disponibles.
+
+Ces options sont enregistrées dans les préférences de l’application et sont
+désactivées par défaut. Lors du tout premier lancement sans compte, utiliser
+« Skip login » une fois pour accéder aux paramètres. Elles ne déconnectent pas
+les comptes et ne modifient pas les conteneurs ou les sauvegardes.
+
+## Reconstruire
 
 Le dépôt suit le modèle amont : les bibliothèques natives sont fournies dans
 les dossiers JNI de chaque variante. Les deux fichiers ARM64 de ce fork ont
@@ -38,7 +56,7 @@ git -C app/src/main/cpp/extras/adrenotools submodule update --init
 git -C app/src/main/cpp/lsfg-vk-android submodule update --init thirdparty/dxbc
 git -C snappy-java/upstream submodule update --init android/snappy
 tools/build-blur-bars-native.ps1 -Sdk <Android-SDK> -Glslang <glslang.exe>
-./gradlew.bat :app:assembleModernDebug :app:testModernDebugUnitTest --tests app.gamenative.ui.util.BlurBarsConfigTest --max-workers=2
+./gradlew.bat :app:assembleModernDebug :app:testModernDebugUnitTest --tests app.gamenative.ui.util.BlurBarsConfigTest --tests app.gamenative.QuietStartupSettingsTest --tests app.gamenative.utils.QuietStartupUpdateTest --max-workers=2
 ```
 
 Outils : JDK 17, SDK 36, build-tools 36.0.0, NDK 27.3.13750724, CMake 3.22.1,
@@ -68,6 +86,9 @@ luminosité indépendants ; tailles impaires, marges d'un pixel, redimensionneme
 et alternance des deux images en vol ; zéro erreur de validation Vulkan.
 Les tests Android ciblés couvrent valeurs par défaut, persistance des quatre
 champs, autres réglages conservés, désactivation et données invalides.
+Les tests de démarrage couvrent aussi le choix de la bibliothèque avec/sans
+comptes, les trois préférences persistantes et réversibles, les états des
+bannières et **zéro requête HTTP** quand la recherche de mise à jour est coupée.
 
 Ce test de rendu de production sur ordinateur et une compilation ARM64 ne
 constituent pas une mesure de fluidité, de consommation ou une validation des

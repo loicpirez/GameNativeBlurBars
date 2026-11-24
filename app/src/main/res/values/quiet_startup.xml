@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="quiet_skip_login">Skip the sign-in screen at startup</string>
+    <string name="quiet_skip_login_description">Open the library directly, like Skip login. You can still sign in manually from Accounts.</string>
+    <string name="quiet_disable_updates">Disable app update checks</string>
+    <string name="quiet_disable_updates_description">Do not request app updates or show update prompts.</string>
+    <string name="quiet_hide_banners">Hide connection banners</string>
+    <string name="quiet_hide_banners_description">Hide Steam connection and disconnection banners. Account sessions and downloads are unchanged.</string>
+</resources>

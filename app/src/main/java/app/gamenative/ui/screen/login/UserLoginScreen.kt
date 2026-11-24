@@ -103,6 +103,7 @@ import app.gamenative.ui.screen.auth.EpicOAuthActivity
 import app.gamenative.ui.screen.auth.GOGOAuthActivity
 import app.gamenative.utils.PlatformOAuthHandlers
 import app.gamenative.R
+import app.gamenative.PrefManager
 import app.gamenative.enums.LoginResult
 import app.gamenative.enums.LoginScreen
 import app.gamenative.ui.component.LoadingScreen
@@ -686,7 +687,9 @@ private fun CredentialsForm(
                             )
                             .padding(24.dp),
                     ) {
-                        Text(stringResource(R.string.no_connection_to_steam), color = Color.White)
+                        if (!PrefManager.hideConnectionBanners) {
+                            Text(stringResource(R.string.no_connection_to_steam), color = Color.White)
+                        }
                         Box(contentAlignment = Alignment.Center) {
                             ThemedOutlinedButton(
                                 onClick = onRetryConnection,

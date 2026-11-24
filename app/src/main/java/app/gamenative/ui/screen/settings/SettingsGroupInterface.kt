@@ -257,6 +257,7 @@ fun SettingsGroupInterface(
     }
 
     SettingsGroup(modifier = Modifier.background(Color.Transparent)) {
+        QuietStartupOptions()
         SettingsSwitch(
             colors = settingsTileColorsAlt(),
             title = { Text(text = stringResource(R.string.settings_achievement_show_notification)) },
