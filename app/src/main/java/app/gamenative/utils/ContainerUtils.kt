@@ -140,6 +140,10 @@ object ContainerUtils {
             graphicsDriverVersion = PrefManager.graphicsDriverVersion,
             graphicsDriverConfig = PrefManager.graphicsDriverConfig,
             rendererPresentMode = PrefManager.rendererPresentMode,
+            enableBlurBars = PrefManager.defaultEnableBlurBars,
+            blurBarsRadius = PrefManager.defaultBlurBarsRadius,
+            blurBarsWidth = PrefManager.defaultBlurBarsWidth,
+            blurBarsBrightness = PrefManager.defaultBlurBarsBrightness,
             displayRenderer = PrefManager.displayRendererMode,
             displayServer = PrefManager.displayServer,
             sfCompatMode = PrefManager.sfCompatMode,
@@ -222,6 +226,10 @@ object ContainerUtils {
         PrefManager.graphicsDriverVersion = containerData.graphicsDriverVersion
         PrefManager.graphicsDriverConfig = containerData.graphicsDriverConfig
         PrefManager.rendererPresentMode = containerData.rendererPresentMode
+        PrefManager.defaultEnableBlurBars = containerData.enableBlurBars
+        PrefManager.defaultBlurBarsRadius = containerData.blurBarsRadius
+        PrefManager.defaultBlurBarsWidth = containerData.blurBarsWidth
+        PrefManager.defaultBlurBarsBrightness = containerData.blurBarsBrightness
         PrefManager.displayRendererMode = containerData.displayRenderer
         PrefManager.displayServer = containerData.displayServer
         PrefManager.sfCompatMode = containerData.sfCompatMode
@@ -342,6 +350,7 @@ object ContainerUtils {
         val shooterConfig = container.getShooterConfig()
         val externalDisplayMode = container.getExternalDisplayMode()
         val externalDisplaySwap = container.isExternalDisplaySwap()
+        val blurBars = app.gamenative.ui.util.loadScreenEffectsConfig(container)
 
         return ContainerData(
             name = container.name,
@@ -351,6 +360,10 @@ object ContainerUtils {
             graphicsDriverVersion = container.graphicsDriverVersion,
             graphicsDriverConfig = container.graphicsDriverConfig,
             rendererPresentMode = container.rendererPresentMode,
+            enableBlurBars = blurBars.enableBlurBars,
+            blurBarsRadius = blurBars.blurBarsRadius,
+            blurBarsWidth = blurBars.blurBarsWidth,
+            blurBarsBrightness = blurBars.blurBarsBrightness,
             displayRenderer = container.displayRenderer,
             displayServer = container.displayServer,
             xrRefreshRate = container.xrRefreshRate,
@@ -623,6 +636,10 @@ object ContainerUtils {
         var updatedData = containerData
         bestConfigMap.forEach { (key, value) ->
             updatedData = when (key) {
+                "enableBlurBars" -> updatedData.copy(enableBlurBars = value as? Boolean ?: updatedData.enableBlurBars)
+                "blurBarsRadius" -> updatedData.copy(blurBarsRadius = (value as? Number)?.toFloat() ?: updatedData.blurBarsRadius)
+                "blurBarsWidth" -> updatedData.copy(blurBarsWidth = (value as? Number)?.toFloat() ?: updatedData.blurBarsWidth)
+                "blurBarsBrightness" -> updatedData.copy(blurBarsBrightness = (value as? Number)?.toFloat() ?: updatedData.blurBarsBrightness)
                 "executablePath" -> value?.let { updatedData.copy(executablePath = it as? String ?: updatedData.executablePath) }
                     ?: updatedData
                 "graphicsDriver" -> value?.let { updatedData.copy(graphicsDriver = it as? String ?: updatedData.graphicsDriver) }
@@ -777,6 +794,7 @@ object ContainerUtils {
         container.graphicsDriver = containerData.graphicsDriver
         // Save driver config through to container
         container.graphicsDriverConfig = containerData.graphicsDriverConfig
+        app.gamenative.ui.util.persistBlurBarsContainerSettings(container, containerData)
         container.rendererPresentMode = containerData.rendererPresentMode
         container.displayRenderer = containerData.displayRenderer
         container.displayServer = containerData.displayServer
@@ -1227,6 +1245,10 @@ object ContainerUtils {
                 graphicsDriverVersion = PrefManager.graphicsDriverVersion,
                 graphicsDriverConfig = PrefManager.graphicsDriverConfig,
                 rendererPresentMode = PrefManager.rendererPresentMode,
+                enableBlurBars = PrefManager.defaultEnableBlurBars,
+                blurBarsRadius = PrefManager.defaultBlurBarsRadius,
+                blurBarsWidth = PrefManager.defaultBlurBarsWidth,
+                blurBarsBrightness = PrefManager.defaultBlurBarsBrightness,
                 displayRenderer = PrefManager.displayRendererMode,
                 displayServer = PrefManager.displayServer,
                 sfCompatMode = PrefManager.sfCompatMode,

@@ -42,7 +42,7 @@ internal fun ListItemImage(
         modifier = modifier
             .size(size)
             .then(imageModifier),
-        imageModel = image,
+        imageRequest = rememberArtworkImageRequest(image()).let { request -> { request } },
         imageOptions = ImageOptions(
             contentScale = contentScale,
             contentDescription = contentDescription,
@@ -72,7 +72,7 @@ internal fun SteamIconImage(
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(12.dp)),
-        imageModel = image,
+        imageRequest = rememberArtworkImageRequest(image()).let { request -> { request } },
         imageOptions = ImageOptions(
             contentScale = ContentScale.Crop,
             contentDescription = contentDescription,
@@ -94,7 +94,7 @@ fun EmoticonImage(
 ) {
     CoilImage(
         modifier = Modifier.size(size),
-        imageModel = image,
+        imageRequest = rememberArtworkImageRequest(image()).let { request -> { request } },
         loading = {
             CircularProgressIndicator(color = PluviaTheme.progressColor)
         },

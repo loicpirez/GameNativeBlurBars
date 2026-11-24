@@ -585,7 +585,7 @@ private fun StoreMediaPage(
         )
     } else {
         CoilImage(
-            imageModel = { item.url },
+            imageRequest = app.gamenative.ui.util.rememberArtworkImageRequest(item.url).let { request -> { request } },
             imageOptions = ImageOptions(
                 contentDescription = gameName,
                 contentScale = if (fullscreen) ContentScale.Fit else ContentScale.Crop,
@@ -2077,7 +2077,7 @@ private fun AchievementIcon(ach: Achievement, size: Dp, corner: Dp, masked: Bool
     } else {
         val iconUrl = ach.previewIconUrl()
         CoilImage(
-            imageModel = { iconUrl ?: "" },
+            imageRequest = app.gamenative.ui.util.rememberArtworkImageRequest(iconUrl ?: "").let { request -> { request } },
             imageOptions = ImageOptions(
                 contentScale = ContentScale.Crop,
                 contentDescription = ach.label,
@@ -2357,7 +2357,7 @@ private fun AchievementsRow(
                             if (!next.isHiddenLocked) {
                                 val nextUrl = next.previewIconUrl()
                                 CoilImage(
-                                    imageModel = { nextUrl ?: "" },
+                                    imageRequest = app.gamenative.ui.util.rememberArtworkImageRequest(nextUrl ?: "").let { request -> { request } },
                                     imageOptions = ImageOptions(
                                         contentScale = ContentScale.Crop,
                                         contentDescription = next.label,

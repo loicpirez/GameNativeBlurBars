@@ -25,6 +25,34 @@ ensuite. Les transformations souris/tactile et les autres effets restent ceux
 de GameNative. L'activation quitte le scanout direct ; sa désactivation le rend
 à nouveau possible si aucun autre effet ne demande le compositeur.
 
+## Réglages avant lancement — version 1.4.1-blur-bars.3
+
+Dans la configuration d’un jeu → **Graphismes**, sélectionner le serveur X11
+et le moteur d’affichage Vulkan. La section **Bandes de ratio floutées** propose
+l’activation et les trois paramètres. Enregistrer pour les appliquer au
+conteneur ; annuler conserve les valeurs précédentes. Les paramètres par
+défaut utilisent la même section pour les nouveaux conteneurs. Les jeux déjà
+configurés gardent leurs valeurs. Le menu rapide en jeu lit les mêmes clés.
+La sauvegarde/recréation du dialogue conserve ces réglages sans écraser les
+autres effets. Les exports incluent les quatre clés dans extraData ; l’import
+d’une configuration compatible les reprend également.
+
+## Artworks des Custom Games — version 1.4.1-blur-bars.3
+
+Les écritures de métadonnées sont synchronisées et atomiques : les cartes ne
+peuvent plus lire un identifiant absent au milieu d’une mise à jour SteamGridDB.
+La migration du format entier ancien ne réentre plus récursivement dans son
+lecteur. Les champs de profil inconnus sont conservés. Les éléments scannés
+portent leur dossier et leurs images ; un échec de recherche d’identifiant ne
+reste pas mémorisé indéfiniment après l’arrivée des métadonnées.
+
+Les cartes, la liste et la fiche observent la même révision des images. Une
+image arrivée après l’ouverture provoque une nouvelle résolution ; une réponse
+du jeu précédent possède son propre état et ne peut pas peindre le jeu courant.
+Les téléchargements publient un fichier complet par remplacement et les clés
+Coil changent même si le nom, la taille et la date du fichier restent identiques.
+Les images locales coverh/coverv/cover restent prioritaires sur SteamGridDB.
+
 ## Démarrage et connexion — version 1.4.1-blur-bars.2
 
 Dans **Paramètres → Interface**, trois interrupteurs globaux indépendants :
@@ -56,7 +84,7 @@ git -C app/src/main/cpp/extras/adrenotools submodule update --init
 git -C app/src/main/cpp/lsfg-vk-android submodule update --init thirdparty/dxbc
 git -C snappy-java/upstream submodule update --init android/snappy
 tools/build-blur-bars-native.ps1 -Sdk <Android-SDK> -Glslang <glslang.exe>
-./gradlew.bat :app:assembleModernDebug :app:testModernDebugUnitTest --tests app.gamenative.ui.util.BlurBarsConfigTest --tests app.gamenative.QuietStartupSettingsTest --tests app.gamenative.utils.QuietStartupUpdateTest --max-workers=2
+./gradlew.bat :app:assembleModernDebug :app:testModernDebugUnitTest --tests app.gamenative.ui.util.BlurBarsConfigTest --tests app.gamenative.ui.util.BlurBarsDialogTest --tests app.gamenative.ui.util.ArtworkImageCacheTest --tests app.gamenative.utils.CustomArtworkMetadataTest --tests app.gamenative.utils.CustomArtworkResolutionTest --tests app.gamenative.ui.component.CustomArtworkRefreshTest --tests app.gamenative.QuietStartupSettingsTest --tests app.gamenative.utils.QuietStartupUpdateTest --max-workers=2
 ```
 
 Outils : JDK 17, SDK 36, build-tools 36.0.0, NDK 27.3.13750724, CMake 3.22.1,
@@ -94,3 +122,15 @@ Ce test de rendu de production sur ordinateur et une compilation ARM64 ne
 constituent pas une mesure de fluidité, de consommation ou une validation des
 entrées en jeu sur un appareil Android. Aucun appareil n'a été modifié pour
 développer cette version. L'essai physique Android reste à réaliser.
+
+### Régressions Custom Games et dialogue
+
+Dix tests supplémentaires couvrent les lectures concurrentes pendant 400 mises
+à jour, la migration héritée, la conservation des champs inconnus, un échec de
+cache suivi de métadonnées tardives, les images des éléments scannés, le
+rafraîchissement d’une fiche ouverte et du modèle de carte, les réponses A/B
+retardées, le vrai décodage Coil après remplacement à nom/taille/date identiques,
+ainsi que la sauvegarde réelle d’un conteneur, les valeurs par défaut et la
+recréation des anciens dialogues. Avec les sept tests précédents, 17 tests
+ciblés passent. Ces essais Robolectric sur ordinateur ne constituent pas une
+acceptation en jeu sur un appareil Android.

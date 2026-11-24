@@ -3,6 +3,7 @@ package app.gamenative.utils
 import java.io.File
 import timber.log.Timber
 import org.json.JSONObject
+import android.util.AtomicFile
 
 /**
  * Data class representing the metadata stored in a .gamenative file.
@@ -26,14 +27,15 @@ object GameMetadataManager {
      * Reads metadata from the .gamenative file in the given folder.
      * Returns null if the file doesn't exist or is invalid.
      */
+    @Synchronized
     fun read(folder: File): GameMetadata? {
         val gamenativeFile = File(folder, FILE_NAME)
-        if (!gamenativeFile.exists() || !gamenativeFile.isFile) {
+        if (!gamenativeFile.isFile && !File(gamenativeFile.path + ".bak").isFile) {
             return null
         }
 
         return try {
-            val content = gamenativeFile.readText().trim()
+            val content = AtomicFile(gamenativeFile).openRead().bufferedReader(Charsets.UTF_8).use { it.readText() }.trim()
             if (content.isEmpty()) {
                 return null
             }
@@ -70,7 +72,8 @@ object GameMetadataManager {
                 if (appId != null) {
                     // Migrate legacy format to new format
                     val metadata = GameMetadata(appId = appId)
-                    write(folder, metadata)
+                    // Never re-enter read() while migrating the same legacy file.
+                    writeSnapshot(folder, metadata)
                     return metadata
                 }
                 null
@@ -85,6 +88,7 @@ object GameMetadataManager {
      * Writes metadata to the .gamenative file in the given folder.
      * Merges with existing metadata if the file already exists.
      */
+    @Synchronized
     fun write(folder: File, metadata: GameMetadata) {
         val gamenativeFile = File(folder, FILE_NAME)
         try {
@@ -98,17 +102,7 @@ object GameMetadataManager {
                 )
             } ?: metadata
             
-            val json = JSONObject().apply {
-                put("appId", merged.appId)
-                if (merged.steamgriddbFetched) {
-                    put("steamgriddbFetched", true)
-                }
-                if (merged.releaseDate != null) {
-                    put("releaseDate", merged.releaseDate)
-                }
-            }
-            
-            gamenativeFile.writeText(json.toString())
+            writeSnapshot(folder, merged)
             Timber.tag("GameMetadataManager").d("Wrote metadata to ${gamenativeFile.absolutePath}: appId=${merged.appId}, fetched=${merged.steamgriddbFetched}, releaseDate=${merged.releaseDate}")
         } catch (e: Exception) {
             Timber.tag("GameMetadataManager").w(e, "Failed to write .gamenative file: ${gamenativeFile.absolutePath}")
@@ -120,6 +114,7 @@ object GameMetadataManager {
      * If appId is not provided and no existing metadata exists, the update will fail.
      * For new metadata, use write() instead.
      */
+    @Synchronized
     fun update(folder: File, appId: Int? = null, steamgriddbFetched: Boolean? = null, releaseDate: Long? = null) {
         val existing = read(folder)
         val finalAppId = appId ?: existing?.appId
@@ -136,7 +131,32 @@ object GameMetadataManager {
                 releaseDate = releaseDate ?: existing?.releaseDate
             )
         }
-        write(folder, updated)
+        try {
+            writeSnapshot(folder, updated)
+        } catch (e: Exception) {
+            Timber.tag("GameMetadataManager").w(e, "Failed to update game metadata")
+        }
+    }
+
+    // Called only while holding this object's monitor: readers cannot see a
+    // truncated file, and concurrent read/merge/write updates cannot lose fields.
+    private fun writeSnapshot(folder: File, metadata: GameMetadata) {
+        val file = File(folder, FILE_NAME)
+        val atomic = AtomicFile(file)
+        val json = runCatching {
+            JSONObject(atomic.openRead().bufferedReader(Charsets.UTF_8).use { it.readText() })
+        }.getOrElse { JSONObject() }
+        json.put("appId", metadata.appId)
+        json.put("steamgriddbFetched", metadata.steamgriddbFetched)
+        metadata.releaseDate?.let { json.put("releaseDate", it) }
+        val stream = atomic.startWrite()
+        try {
+            stream.write(json.toString().toByteArray(Charsets.UTF_8))
+            atomic.finishWrite(stream)
+        } catch (e: Exception) {
+            atomic.failWrite(stream)
+            throw e
+        }
     }
 
     /**

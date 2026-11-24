@@ -11,7 +11,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
 import java.net.URLEncoder
 import java.util.Properties
 import java.util.concurrent.TimeUnit
@@ -176,7 +175,7 @@ object SteamGridDB {
             val outputFile = File(gameFolder, "$fileName$extension")
 
             // Save to file
-            FileOutputStream(outputFile).use { it.write(imageBytes) }
+            CustomGameArtwork.writeImage(outputFile, imageBytes)
 
             Timber.tag("SteamGridDB").i("Saved image to ${outputFile.absolutePath} (horizontal: $isHorizontal)")
             return@withContext Pair(outputFile.absolutePath, isHorizontal)
@@ -268,7 +267,7 @@ object SteamGridDB {
                     // This is horizontal - use for hero
                     val heroFile = File(gameFolder, "steamgriddb_grid_hero$extension")
                     try {
-                        FileOutputStream(heroFile).use { it.write(imageBytes) }
+                        CustomGameArtwork.writeImage(heroFile, imageBytes)
                         heroPath = heroFile.absolutePath
                         Timber.tag("SteamGridDB").i("Found horizontal grid for hero: ${heroFile.name}")
                     } catch (e: Exception) {
@@ -278,7 +277,7 @@ object SteamGridDB {
                     // This is vertical - use for capsule
                     val capsuleFile = File(gameFolder, "steamgriddb_grid_capsule$extension")
                     try {
-                        FileOutputStream(capsuleFile).use { it.write(imageBytes) }
+                        CustomGameArtwork.writeImage(capsuleFile, imageBytes)
                         capsulePath = capsuleFile.absolutePath
                         Timber.tag("SteamGridDB").i("Found vertical grid for capsule: ${capsuleFile.name}")
                     } catch (e: Exception) {
@@ -396,7 +395,7 @@ object SteamGridDB {
             val imageBytes = imageResponse.body?.bytes() ?: return@withContext null
 
             // Save to file
-            FileOutputStream(outputFile).use { it.write(imageBytes) }
+            CustomGameArtwork.writeImage(outputFile, imageBytes)
 
             Timber.tag("SteamGridDB").i("Saved $imageType image to ${outputFile.absolutePath}")
             return@withContext outputFile.absolutePath

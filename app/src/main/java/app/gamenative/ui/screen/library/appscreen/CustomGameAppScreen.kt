@@ -66,82 +66,16 @@ class CustomGameAppScreen : BaseAppScreen() {
         context: Context,
         libraryItem: LibraryItem
     ): GameDisplayInfo {
-        val gameFolderPath = remember(libraryItem.appId) {
-            CustomGameScanner.getFolderPathFromAppId(libraryItem.appId)
-        }
-
-        // Helper function to find SteamGridDB images in the game folder
-        fun findSteamGridDBImage(folder: File, imageType: String): String? {
-            return folder.listFiles()?.firstOrNull { file ->
-                file.name.startsWith("steamgriddb_$imageType") &&
-                (file.name.endsWith(".png", ignoreCase = true) ||
-                 file.name.endsWith(".jpg", ignoreCase = true) ||
-                 file.name.endsWith(".webp", ignoreCase = true))
-            }?.let { Uri.fromFile(it).toString() }
-        }
-
-        // Check for all SteamGridDB images in the game folder
-        // Hero view uses horizontal grid (grid_hero)
-        // A user-supplied "coverh"/"cover" image takes priority over SteamGridDB.
-        // coverh = horizontal cover
-        val heroImageUrl = remember(gameFolderPath) {
-            gameFolderPath?.let { path ->
-                val folder = File(path)
-                CustomGameScanner.findHeroCoverInFolder(folder)
-                    ?: findSteamGridDBImage(folder, "grid_hero")
-            }
-        }
-
-        // Capsule view uses vertical grid (grid_capsule)
-        // A user-supplied "coverv"/"cover" image takes priority over SteamGridDB.
-        // coverv = vertical cover
-        val capsuleUrl = remember(gameFolderPath) {
-            gameFolderPath?.let { path ->
-                val folder = File(path)
-                CustomGameScanner.findCapsuleCoverInFolder(folder)
-                    ?: findSteamGridDBImage(folder, "grid_capsule")
-            }
-        }
-
-        // Header view uses heroes endpoint (hero, but not grid_hero)
-        // This is also a horizontal banner, so the user "coverh"/"cover" applies here too.
-        val headerUrl = remember(gameFolderPath) {
-            gameFolderPath?.let { path ->
-                val folder = File(path)
-                CustomGameScanner.findHeroCoverInFolder(folder)
-                    ?: folder.listFiles()?.firstOrNull { file ->
-                        file.name.startsWith("steamgriddb_hero") &&
-                        !file.name.contains("grid") &&
-                        (file.name.endsWith(".png", ignoreCase = true) ||
-                         file.name.endsWith(".jpg", ignoreCase = true) ||
-                         file.name.endsWith(".webp", ignoreCase = true))
-                    }?.let { Uri.fromFile(it).toString() }
-            }
-        }
-
-        val logoUrl = remember(gameFolderPath) {
-            gameFolderPath?.let { path ->
-                val folder = File(path)
-                findSteamGridDBImage(folder, "logo")
-            }
-        }
-
-        // Note: iconUrl is intentionally null - we extract icons from exe files
-        // and don't use SteamGridDB icons
-
-        // Try to get release date from .gamenative metadata if available
-        var releaseDate by remember { mutableStateOf(0L) }
-        LaunchedEffect(gameFolderPath) {
-            gameFolderPath?.let { path ->
-                val folder = File(path)
-                // Get release date from metadata
-                val metadata = app.gamenative.utils.GameMetadataManager.read(folder)
-                releaseDate = metadata?.releaseDate ?: 0L
-            }
-        }
+        val artwork = app.gamenative.ui.util.rememberCustomArtwork(libraryItem)
+        val gameFolderPath = artwork?.folderPath
+        val heroImageUrl = artwork?.hero
+        val capsuleUrl = artwork?.capsule
+        val headerUrl = artwork?.header
+        val logoUrl = artwork?.logo
+        val releaseDate = artwork?.releaseDate ?: 0L
 
         // Calculate folder size on disk (async, will update via state)
-        var sizeOnDisk by remember { mutableStateOf<String?>(null) }
+        var sizeOnDisk by remember(libraryItem.appId, gameFolderPath) { mutableStateOf<String?>(null) }
         LaunchedEffect(gameFolderPath) {
             gameFolderPath?.let { path ->
                 withContext(Dispatchers.IO) {
@@ -391,8 +325,8 @@ class CustomGameAppScreen : BaseAppScreen() {
                             )
 
                             SteamGridDB.fetchGameImages(gameName, gameFolderPath)
-                            PluviaApp.events.emit(AndroidEvent.CustomGameImagesFetched(libraryItem.appId))
                             onAfterFetchImages(context, libraryItem, gameFolderPath)
+                            PluviaApp.events.emit(AndroidEvent.CustomGameImagesFetched(libraryItem.appId))
 
                             SnackbarManager.show(context.getString(R.string.base_app_images_fetched))
                         } else {

@@ -316,6 +316,26 @@ object PrefManager {
             setPref(GRAPHICS_DRIVER_CONFIG, value)
         }
 
+    private val DEFAULT_ENABLE_BLUR_BARS = booleanPreferencesKey("default_enableBlurBars")
+    var defaultEnableBlurBars: Boolean
+        get() = getPref(DEFAULT_ENABLE_BLUR_BARS, false)
+        set(value) { setPref(DEFAULT_ENABLE_BLUR_BARS, value) }
+
+    private val DEFAULT_BLUR_BARS_RADIUS = floatPreferencesKey("default_blurBarsRadius")
+    var defaultBlurBarsRadius: Float
+        get() = getPref(DEFAULT_BLUR_BARS_RADIUS, 48f)
+        set(value) { setPref(DEFAULT_BLUR_BARS_RADIUS, value) }
+
+    private val DEFAULT_BLUR_BARS_WIDTH = floatPreferencesKey("default_blurBarsWidth")
+    var defaultBlurBarsWidth: Float
+        get() = getPref(DEFAULT_BLUR_BARS_WIDTH, 12f)
+        set(value) { setPref(DEFAULT_BLUR_BARS_WIDTH, value) }
+
+    private val DEFAULT_BLUR_BARS_BRIGHTNESS = floatPreferencesKey("default_blurBarsBrightness")
+    var defaultBlurBarsBrightness: Float
+        get() = getPref(DEFAULT_BLUR_BARS_BRIGHTNESS, 75f)
+        set(value) { setPref(DEFAULT_BLUR_BARS_BRIGHTNESS, value) }
+
     private val RENDERER_PRESENT_MODE = stringPreferencesKey("renderer_present_mode")
     var rendererPresentMode: String
         get() = getPref(RENDERER_PRESENT_MODE, "fifo")

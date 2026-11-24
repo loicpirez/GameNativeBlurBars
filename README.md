@@ -4,9 +4,11 @@ Option de bandes de ratio floutées par jeu : centre net, rayon, largeur et
 luminosité réglables. Désactivée par défaut, sans changement des entrées.
 Trois options globales dans Paramètres → Interface : passer la connexion au
 démarrage, désactiver les mises à jour et masquer les bannières de connexion.
+Artworks Custom Games rafraîchis dans la bibliothèque et les fiches ; réglages
+du flou accessibles avant lancement et comme valeurs par défaut.
 [Utilisation, construction et portée des tests](docs/BLUR-BARS.md).
 
-Version expérimentale ARM64 `1.4.1-blur-bars.2` ; sortie Vulkan GameNative,
+Version expérimentale ARM64 `1.4.1-blur-bars.3` ; sortie Vulkan GameNative,
 hors Gamescope/SurfaceFlinger/OpenGL/XR immersif. Les informations amont suivent.
 
 ---

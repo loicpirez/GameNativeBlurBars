@@ -42,6 +42,8 @@ data class LibraryItem(
     val capsuleImageUrl: String = "",
     val headerImageUrl: String = "",
     val heroImageUrl: String = "",
+    /** Snapshot from the scan: artwork does not depend on a later cache rebuild. */
+    val customGameFolderPath: String? = null,
     val gridHeroImageScale: Float = 1f,
     val isShared: Boolean = false,
     val gameSource: GameSource = GameSource.STEAM,

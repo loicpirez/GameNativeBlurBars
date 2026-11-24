@@ -494,6 +494,19 @@ fun GraphicsTabContent(
             }
         }
 
+        if (!isHtml5) {
+            if (isX11Display && config.displayRenderer == "vulkan") {
+                app.gamenative.ui.component.BlurBarsControls(
+                    config = app.gamenative.ui.util.blurBarsScreenEffects(config),
+                    onChange = { effects ->
+                        state.config.value = app.gamenative.ui.util.withBlurBars(state.config.value, effects)
+                    },
+                )
+            } else {
+                Text(stringResource(R.string.blur_bars_renderer_hint), modifier = Modifier.padding(16.dp))
+            }
+        }
+
         // Frame Generation (LSFG) — hooks the Vulkan swapchain for
         // transparent frame generation. Only effective on Bionic containers
         // with a Vortek/Adreno graphics driver.

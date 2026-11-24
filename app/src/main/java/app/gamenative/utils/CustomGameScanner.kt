@@ -321,7 +321,7 @@ object CustomGameScanner {
     private fun findCoverByBaseNames(folder: File, baseNames: List<String>): String? {
         if (!folder.exists() || !folder.isDirectory) return null
         val extensions = listOf("png", "jpg", "jpeg", "webp")
-        val files = folder.listFiles { f -> f.isFile } ?: return null
+        val files = folder.listFiles { f -> f.isFile && f.length() > 0L } ?: return null
         for (base in baseNames) {
             val match = files.filter { file ->
                 extensions.any { ext -> file.name.equals("$base.$ext", ignoreCase = true) }
@@ -662,6 +662,7 @@ object CustomGameScanner {
                             if (!outIco.exists() || outIco.lastModified() < exeFile.lastModified()) {
                                 if (ExeIconExtractor.tryExtractMainIcon(exeFile, outIco)) {
                                     Timber.tag("CustomGameScanner").d("Extracted icon for ${folder.name} from ${exeFile.name}")
+                                    app.gamenative.PluviaApp.events.emit(app.gamenative.events.AndroidEvent.CustomGameImagesFetched(appId))
                                 }
                             }
                         }
@@ -731,11 +732,16 @@ object CustomGameScanner {
         val appId = "${GameSource.CUSTOM_GAME.name}_$idPart"
 
         handleCustomGameDetection(folder, appId, idPart)
+        val artwork = CustomGameArtwork.fromFolder(folder)
 
         return LibraryItem(
             index = 0,
             appId = appId,
             name = folder.name,
+            customGameFolderPath = folder.absolutePath,
+            heroImageUrl = artwork.hero.orEmpty(),
+            headerImageUrl = artwork.header.orEmpty(),
+            capsuleImageUrl = artwork.capsule.orEmpty(),
             iconHash = "",
             isShared = false,
             gameSource = GameSource.CUSTOM_GAME,
@@ -809,6 +815,7 @@ object CustomGameScanner {
      * Ensures the generated ID is unique across all Custom Games.
      * If generated, stores it in the file for future use.
      */
+    @Synchronized
     private fun getOrGenerateGameId(folder: File): Int {
         // Use the stored id unless another live folder owns it, e.g. an imported copy whose
         // .gamenative was copied along with the game files
@@ -816,6 +823,7 @@ object CustomGameScanner {
         if (storedId != null) {
             val owner = getOrRebuildCache()[storedId]
             if (owner == null || owner == folder.absolutePath || !File(owner).isDirectory) {
+                CustomGameCache.addEntry(storedId, folder.absolutePath)
                 return storedId
             }
         }
@@ -842,6 +850,7 @@ object CustomGameScanner {
 
         // Store it in the file for future use
         writeGameIdToFile(folder, candidateId)
+        CustomGameCache.addEntry(candidateId, folder.absolutePath)
 
         return candidateId
     }
@@ -868,7 +877,10 @@ object CustomGameScanner {
             }
         }
 
-        return null
+        // The set of folders can be unchanged while its metadata IDs have just
+        // been committed by a scan/import. Do not retain that negative lookup.
+        invalidateCache()
+        return getOrRebuildCache()[gameId]?.takeIf { File(it).isDirectory }
     }
 
     // Helper function to check if game is installed to match pattern of GOG & Steam Service

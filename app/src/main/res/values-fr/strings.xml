@@ -3507,4 +3507,5 @@
     <string name="html5_diagnostic_log_full">Journal de diagnostic alterné — ancienne trace archivée.</string>
     <string name="html5_diagnostic_write_error">Échec de l\'écriture du journal de diagnostic.</string>
     <string name="html5_electron_missing_product_name">Profil HTML5 : titre Electron sans productName/name dans package.json</string>
+    <string name="blur_bars_renderer_hint">Choisissez le serveur X11 et le moteur d’affichage Vulkan pour régler les bandes floutées. Gardez un mode de mise à l’échelle qui préserve le ratio.</string>
 </resources>

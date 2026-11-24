@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -60,6 +61,7 @@ internal fun LibraryDynamicBackdrop(
     fullResolution: Boolean = false,
 ) {
     val context = LocalContext.current
+    val artworkRevisions by app.gamenative.utils.CustomGameArtwork.revisions.collectAsState()
     val scrimColor = MaterialTheme.colorScheme.scrim
     val themeHero = PluviaTheme.hero
     val hero = if (defaultHero == null) themeHero else themeHero?.let { defaultHero.overlay(it) } ?: defaultHero
@@ -107,8 +109,9 @@ internal fun LibraryDynamicBackdrop(
                     if (targetInfo != null) {
                         val imageUrls by produceState(
                             initialValue = GridImageUrls("", ""),
-                            key1 = targetInfo.appId,
+                            key1 = targetInfo,
                             key2 = imageRefreshCounter,
+                            key3 = artworkRevisions[targetInfo.appId],
                         ) {
                             value = withContext(Dispatchers.IO) {
                                 if (fullResolution) {
@@ -137,7 +140,7 @@ internal fun LibraryDynamicBackdrop(
                                         scaleY = 1.06f
                                     }
                                     .then(if (hero == null) Modifier.alpha(0.38f).blur(DYNAMIC_BACKDROP_BLUR_RADIUS) else hero.artworkLook(fade = !banded)),
-                                imageModel = { currentImageUrl },
+                                imageRequest = app.gamenative.ui.util.rememberArtworkImageRequest(currentImageUrl).let { request -> { request } },
                                 imageOptions = ImageOptions(
                                     contentScale = ContentScale.Crop,
                                     contentDescription = null,

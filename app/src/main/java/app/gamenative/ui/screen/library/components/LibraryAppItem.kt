@@ -125,6 +125,7 @@ internal fun AppItem(
 
     when (paneType) {
         PaneType.LIST -> ListViewCard(
+            imageRefreshCounter = imageRefreshCounter,
             modifier = modifier,
             appInfo = appInfo,
             onClick = onClick,

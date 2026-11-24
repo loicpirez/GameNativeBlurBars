@@ -1484,7 +1484,7 @@ private fun formatPercent(value: Float): String {
 }
 
 @Composable
-private fun BlurBarsControls(config: ScreenEffectsConfig, onChange: (ScreenEffectsConfig) -> Unit) {
+internal fun BlurBarsControls(config: ScreenEffectsConfig, onChange: (ScreenEffectsConfig) -> Unit) {
     OptionSectionHeader(text = stringResource(R.string.blur_bars_title))
     ScreenEffectToggleRow(
         title = stringResource(R.string.blur_bars_enable),

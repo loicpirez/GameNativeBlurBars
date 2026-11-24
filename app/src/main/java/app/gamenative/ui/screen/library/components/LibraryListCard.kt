@@ -76,6 +76,7 @@ internal fun ListViewCard(
     communityCompatibility: CommunityCompatibilitySummary?,
     gameStats: GameCardStats?,
     context: Context,
+    imageRefreshCounter: Long = 0L,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isItemFocused by interactionSource.collectIsFocusedAsState()
@@ -165,13 +166,21 @@ internal fun ListViewCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Game icon
+            val artwork = if (appInfo.gameSource == GameSource.CUSTOM_GAME) {
+                app.gamenative.ui.util.rememberCustomArtwork(appInfo, imageRefreshCounter)
+            } else null
             val iconUrl by produceState(
-                initialValue = appInfo.clientIconUrl,
-                key1 = appInfo.appId,
-                key2 = appInfo.clientIconUrl,
+                initialValue = "",
+                key1 = appInfo,
+                key2 = artwork,
+                key3 = imageRefreshCounter,
             ) {
                 value = withContext(Dispatchers.IO) {
-                    getListIconUrl(context, appInfo)
+                    val url = getListIconUrl(context, appInfo).ifEmpty {
+                        artwork?.logo ?: artwork?.capsule ?: artwork?.hero.orEmpty()
+                    }
+                    app.gamenative.utils.CustomGameArtwork.versionedUri(url,
+                        app.gamenative.utils.CustomGameArtwork.revisions.value[appInfo.appId] ?: 0L)
                 }
             }
 

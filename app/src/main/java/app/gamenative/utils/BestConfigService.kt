@@ -1086,6 +1086,15 @@ object BestConfigService {
                     resultMap["videoMemorySize"] = filteredJson.optString("videoMemorySize", PrefManager.videoMemorySize)
                 }
 
+                // Our exported containers keep effects in extraData. Only copy these
+                // four known keys; unrelated extras and profiles stay untouched.
+                originalJson.optJSONObject("extraData")?.let { extras ->
+                    val effects = app.gamenative.ui.util.ScreenEffectsConfig
+                    if (extras.has(effects.KEY_ENABLE_BLUR_BARS)) resultMap["enableBlurBars"] = extras.optBoolean(effects.KEY_ENABLE_BLUR_BARS, false)
+                    for ((key, field) in listOf(effects.KEY_BLUR_BARS_RADIUS to "blurBarsRadius", effects.KEY_BLUR_BARS_WIDTH to "blurBarsWidth", effects.KEY_BLUR_BARS_BRIGHTNESS to "blurBarsBrightness")) {
+                        if (extras.has(key)) extras.optString(key).toFloatOrNull()?.takeIf { it.isFinite() }?.let { resultMap[field] = it }
+                    }
+                }
                 return ParsedConfigResult(resultMap, missingComponents)
             }
         } catch (e: Exception) {
