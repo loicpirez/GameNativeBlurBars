@@ -13,7 +13,7 @@ import org.junit.Test
 class QuietStartupSettingsTest {
     @Test
     fun startupSkipsOnlyTheUnnecessaryLoginPrompt() {
-        val normal = QuietStartupSettings()
+        val normal = QuietStartupSettings(skipLoginScreen = false)
         val skip = normal.copy(skipLoginScreen = true)
         assertEquals(StartupLibraryMode.LOGIN, normal.initialLibraryMode(false, false))
         assertEquals(StartupLibraryMode.OFFLINE, skip.initialLibraryMode(false, false))
@@ -27,7 +27,7 @@ class QuietStartupSettingsTest {
 
     @Test
     fun bannersAreSuppressedForConnectingAndDisconnectedStates() {
-        val visible = QuietStartupSettings()
+        val visible = QuietStartupSettings(hideConnectionBanners = false)
         val hidden = visible.copy(hideConnectionBanners = true)
         assertTrue(visible.showConnectionWarning(true, false))
         assertTrue(visible.showConnectionWarning(false, true))
@@ -42,6 +42,11 @@ class QuietStartupSettingsTest {
         installFakePrefManager(FakeDataStore()).use {
             PrefManager.reloadQuietStartupSettings()
             assertEquals(QuietStartupSettings(), PrefManager.quietStartupSettings.value)
+            assertTrue(PrefManager.skipLoginScreen)
+            assertTrue(PrefManager.disableUpdateChecks)
+            assertTrue(PrefManager.hideConnectionBanners)
+            assertEquals(StartupLibraryMode.OFFLINE, PrefManager.quietStartupSettings.value.initialLibraryMode(false, false))
+            assertFalse(PrefManager.quietStartupSettings.value.showConnectionWarning(false, true))
             PrefManager.showGamepadHints = false
             PrefManager.skipLoginScreen = true
             PrefManager.disableUpdateChecks = true
@@ -66,6 +71,8 @@ class QuietStartupSettingsTest {
                     !PrefManager.getBoolean("blur_bars_disable_update_checks", true) &&
                     !PrefManager.getBoolean("blur_bars_hide_connection_banners", true)
             }
+            PrefManager.reloadQuietStartupSettings()
+            assertEquals(QuietStartupSettings(false, false, false), PrefManager.quietStartupSettings.value)
         }
     }
 }

@@ -80,9 +80,9 @@ object PrefManager {
 
     internal fun reloadQuietStartupSettings() {
         quietStartupState.value = QuietStartupSettings(
-            getPref(SKIP_LOGIN_SCREEN, false),
-            getPref(DISABLE_UPDATE_CHECKS, false),
-            getPref(HIDE_CONNECTION_BANNERS, false),
+            getPref(SKIP_LOGIN_SCREEN, true),
+            getPref(DISABLE_UPDATE_CHECKS, true),
+            getPref(HIDE_CONNECTION_BANNERS, true),
         )
     }
 

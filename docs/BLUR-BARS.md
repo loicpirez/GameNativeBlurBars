@@ -66,10 +66,12 @@ Dans **Paramètres → Interface**, trois interrupteurs globaux indépendants :
   Steam et le texte de déconnexion du formulaire ; les commandes manuelles de
   connexion restent disponibles.
 
-Ces options sont enregistrées dans les préférences de l’application et sont
-désactivées par défaut. Lors du tout premier lancement sans compte, utiliser
-« Skip login » une fois pour accéder aux paramètres. Elles ne déconnectent pas
-les comptes et ne modifient pas les conteneurs ou les sauvegardes.
+Depuis la version **1.4.1-blur-bars.4**, ces trois options sont **activées par
+défaut** dès le premier démarrage, ou lors d’une mise à jour si leurs préférences
+sont absentes. Sans compte, la bibliothèque s’ouvre directement. Un choix déjà
+enregistré, y compris désactivé, reste respecté. Les trois interrupteurs dans
+Paramètres → Interface permettent toujours de revenir au comportement souhaité.
+Les comptes, conteneurs et sauvegardes sont conservés.
 
 ## Reconstruire
 
