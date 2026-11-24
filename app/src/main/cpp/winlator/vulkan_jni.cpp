@@ -8,6 +8,19 @@
 #include "../extras/adrenotools/include/adrenotools/driver.h"
 #include "VulkanRendererContext.h"
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_winlator_renderer_VulkanRenderer_nativeSetBlurBarsContentSize(JNIEnv*, jobject, jlong handle, jint width, jint height) {
+    auto* renderer=reinterpret_cast<VulkanRendererContext*>(handle);
+    if(renderer) renderer->setBlurBarsContentSize(width,height);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_winlator_renderer_VulkanRenderer_nativeSetBlurBars(JNIEnv*, jobject, jlong handle,
+        jboolean enabled, jfloat radius, jfloat edgeWidth, jfloat brightness) {
+    auto* renderer=reinterpret_cast<VulkanRendererContext*>(handle);
+    if(renderer) renderer->setBlurBars(enabled==JNI_TRUE,radius,edgeWidth,brightness);
+}
+
 static void* openAdrenotoolsDriver(const char* driverPath, const char* libraryName, const char* nativeLibDir) {
     if (!driverPath || !libraryName || !nativeLibDir) return nullptr;
     if (access(driverPath, F_OK) != 0) {

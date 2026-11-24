@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.22)
+project(BlurBarsRegression LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(native "${CMAKE_CURRENT_LIST_DIR}/../../app/src/main/cpp/winlator")
+find_program(GLSLANG_VALIDATOR NAMES glslangValidator glslang REQUIRED)
+foreach(stage vert frag)
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/blur_bars_${stage}.h"
+        COMMAND "${GLSLANG_VALIDATOR}" -V --vn blur_bars_${stage}_code -x -o "${CMAKE_CURRENT_BINARY_DIR}/blur_bars_${stage}.h" "${native}/blur_bars.${stage}"
+        DEPENDS "${native}/blur_bars.${stage}")
+endforeach()
+add_executable(blur-bars-test main.cpp "${native}/BlurBarsVulkan.cpp" "${CMAKE_CURRENT_BINARY_DIR}/blur_bars_vert.h" "${CMAKE_CURRENT_BINARY_DIR}/blur_bars_frag.h")
+target_include_directories(blur-bars-test PRIVATE "${native}" "${CMAKE_CURRENT_BINARY_DIR}" "${VULKAN_HEADERS}")
+if(NOT WIN32)
+    target_link_libraries(blur-bars-test PRIVATE dl)
+endif()

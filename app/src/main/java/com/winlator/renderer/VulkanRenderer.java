@@ -46,6 +46,10 @@ public class VulkanRenderer implements WindowManager.OnWindowModificationListene
     public final XServerView xServerView;
     private final XServer xServer;
     private long nativeHandle = 0;
+    private boolean pendingBlurBars = false;
+    private float pendingBlurRadius = 48f, pendingBlurWidth = 0.12f, pendingBlurBrightness = 0.75f;
+    private native void nativeSetBlurBars(long handle, boolean enabled, float radius, float edgeWidth, float brightness);
+    private native void nativeSetBlurBarsContentSize(long handle, int width, int height);
     private final Object lock = new Object();
 
     public final ViewTransformation viewTransformation = new ViewTransformation();
@@ -242,6 +246,7 @@ public class VulkanRenderer implements WindowManager.OnWindowModificationListene
                     }
                 }
                 nativeHandle = nativeInit(surface, xServer.screenInfo.width, xServer.screenInfo.height, driverPath, driverLibraryName, nativeLibDir, frameGenArmed);
+                if (nativeHandle != 0) nativeSetBlurBars(nativeHandle, pendingBlurBars, pendingBlurRadius, pendingBlurWidth, pendingBlurBrightness);
                 if (nativeHandle != 0) {
                     nativeSetPresentMode(nativeHandle, pendingPresentMode);
                     nativeSetFilterMode(nativeHandle, pendingFilterMode);
@@ -371,6 +376,7 @@ public class VulkanRenderer implements WindowManager.OnWindowModificationListene
     private void updateTransform() {
         if (nativeHandle == 0 || surfaceWidth <= 0 || surfaceHeight <= 0) return;
         ScreenInfo inner = effectiveScreen;
+        nativeSetBlurBarsContentSize(nativeHandle, inner.width, inner.height);
         float fx = (float) xServer.screenInfo.width / inner.width;
         float fy = (float) xServer.screenInfo.height / inner.height;
         if (fullscreen || outputScalingMode == SCALE_STRETCH) {
@@ -873,8 +879,25 @@ public class VulkanRenderer implements WindowManager.OnWindowModificationListene
     // Returns true if any active effect, filter, or color adjustment needs the
     // compositor (window.frag). Scanout bypasses the shader, so these can only
     // take visible effect when content is routed through the textured-quad path.
+    public void setBlurBars(boolean enabled, float radius, float edgeWidth, float brightness) {
+        boolean wasRequireCompositor;
+        synchronized (lock) {
+            wasRequireCompositor = effectsRequireCompositor;
+            pendingBlurBars = enabled;
+            pendingBlurRadius = Float.isFinite(radius) ? Math.max(0f, Math.min(120f, radius)) : 48f;
+            pendingBlurWidth = Float.isFinite(edgeWidth) ? Math.max(0.01f, Math.min(0.5f, edgeWidth)) : 0.12f;
+            pendingBlurBrightness = Float.isFinite(brightness) ? Math.max(0f, Math.min(1f, brightness)) : 0.75f;
+            effectsRequireCompositor = computeEffectsRequireCompositor();
+            if (nativeHandle != 0) nativeSetBlurBars(nativeHandle, pendingBlurBars, pendingBlurRadius, pendingBlurWidth, pendingBlurBrightness);
+        }
+        if (nativeMode && wasRequireCompositor != effectsRequireCompositor) {
+            if (effectsRequireCompositor) tearDownScanout();
+            else establishScanout();
+        }
+    }
+
     private boolean computeEffectsRequireCompositor() {
-        return frameGenEnabled
+        return pendingBlurBars || frameGenEnabled
             || pendingEffectId != EFFECT_NONE
             || pendingEffectMask != 0
             || pendingBrightness != 0.0f

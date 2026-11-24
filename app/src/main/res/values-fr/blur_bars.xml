@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="blur_bars_title">Bandes de ratio floutées</string>
+    <string name="blur_bars_enable">Flouter les marges inutilisées</string>
+    <string name="blur_bars_description">Affichage Vulkan uniquement. Centre net et proportionné ; prolongement des bords dans les marges. Utiliser Adapter ou FSR avec ratio. Hors Gamescope et XR immersif.</string>
+    <string name="blur_bars_radius">Rayon du flou (à 1080p)</string>
+    <string name="blur_bars_width">Largeur du bord prélevé</string>
+    <string name="blur_bars_brightness">Luminosité des bandes</string>
+</resources>

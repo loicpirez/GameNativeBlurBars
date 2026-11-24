@@ -1,3 +1,14 @@
+# GameNative Blur Bars — fork Vulkan
+
+Option de bandes de ratio floutées par jeu : centre net, rayon, largeur et
+luminosité réglables. Désactivée par défaut, sans changement des entrées.
+[Utilisation, construction et portée des tests](docs/BLUR-BARS.md).
+
+Version expérimentale ARM64 `1.4.1-blur-bars.1` ; sortie Vulkan GameNative,
+hors Gamescope/SurfaceFlinger/OpenGL/XR immersif. Les informations amont suivent.
+
+---
+
 <div align="center">
 
 # GameNative

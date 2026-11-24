@@ -26,6 +26,10 @@ data class ScreenEffectsConfig(
     val enableVivid: Boolean = false,
     val enableCRT: Boolean = false,
     val enableNTSC: Boolean = false,
+    val enableBlurBars: Boolean = false,
+    val blurBarsRadius: Float = 48f,
+    val blurBarsWidth: Float = 12f,
+    val blurBarsBrightness: Float = 75f,
 ) {
     companion object {
         const val SCALING_MODE_NONE = 0
@@ -52,6 +56,10 @@ data class ScreenEffectsConfig(
         const val KEY_ENABLE_VIVID = "screenEffectsEnableVivid"
         const val KEY_ENABLE_CRT = "screenEffectsEnableCRT"
         const val KEY_ENABLE_NTSC = "screenEffectsEnableNTSC"
+        const val KEY_ENABLE_BLUR_BARS = "screenEffectsEnableBlurBars"
+        const val KEY_BLUR_BARS_RADIUS = "screenEffectsBlurBarsRadius"
+        const val KEY_BLUR_BARS_WIDTH = "screenEffectsBlurBarsWidth"
+        const val KEY_BLUR_BARS_BRIGHTNESS = "screenEffectsBlurBarsBrightness"
     }
 }
 
@@ -69,6 +77,10 @@ fun loadScreenEffectsConfig(container: Container?): ScreenEffectsConfig {
         enableVivid = container.getExtra(ScreenEffectsConfig.KEY_ENABLE_VIVID)?.toBooleanStrictOrNull() ?: false,
         enableCRT = container.getExtra(ScreenEffectsConfig.KEY_ENABLE_CRT)?.toBooleanStrictOrNull() ?: false,
         enableNTSC = container.getExtra(ScreenEffectsConfig.KEY_ENABLE_NTSC)?.toBooleanStrictOrNull() ?: false,
+        enableBlurBars = container.getExtra(ScreenEffectsConfig.KEY_ENABLE_BLUR_BARS)?.toBooleanStrictOrNull() ?: false,
+        blurBarsRadius = blurBarsValue(container.getExtra(ScreenEffectsConfig.KEY_BLUR_BARS_RADIUS), 48f, 0f, 120f),
+        blurBarsWidth = blurBarsValue(container.getExtra(ScreenEffectsConfig.KEY_BLUR_BARS_WIDTH), 12f, 1f, 50f),
+        blurBarsBrightness = blurBarsValue(container.getExtra(ScreenEffectsConfig.KEY_BLUR_BARS_BRIGHTNESS), 75f, 0f, 100f),
     )
 }
 
@@ -88,7 +100,14 @@ fun persistScreenEffectsConfig(container: Container?, config: ScreenEffectsConfi
     container.putExtra(ScreenEffectsConfig.KEY_ENABLE_VIVID, config.enableVivid)
     container.putExtra(ScreenEffectsConfig.KEY_ENABLE_CRT, config.enableCRT)
     container.putExtra(ScreenEffectsConfig.KEY_ENABLE_NTSC, config.enableNTSC)
+    container.putExtra(ScreenEffectsConfig.KEY_ENABLE_BLUR_BARS, config.enableBlurBars)
+    container.putExtra(ScreenEffectsConfig.KEY_BLUR_BARS_RADIUS, blurBarsValue(config.blurBarsRadius.toString(), 48f, 0f, 120f))
+    container.putExtra(ScreenEffectsConfig.KEY_BLUR_BARS_WIDTH, blurBarsValue(config.blurBarsWidth.toString(), 12f, 1f, 50f))
+    container.putExtra(ScreenEffectsConfig.KEY_BLUR_BARS_BRIGHTNESS, blurBarsValue(config.blurBarsBrightness.toString(), 75f, 0f, 100f))
 }
+
+internal fun blurBarsValue(raw: String?, fallback: Float, min: Float, max: Float): Float =
+    raw?.toFloatOrNull()?.takeIf { it.isFinite() }?.coerceIn(min, max) ?: fallback
 
 fun fsrQuickMenuLevelToStops(level: Int): Float {
     val clamped = level.coerceIn(ScreenEffectsConfig.FSR_MIN_LEVEL, ScreenEffectsConfig.FSR_MAX_LEVEL)
@@ -157,6 +176,7 @@ fun applyScreenEffectsConfig(renderer: GLRenderer, config: ScreenEffectsConfig) 
 }
 
 fun applyScreenEffectsConfig(renderer: VulkanRenderer, config: ScreenEffectsConfig) {
+    renderer.setBlurBars(config.enableBlurBars, config.blurBarsRadius, config.blurBarsWidth / 100f, config.blurBarsBrightness / 100f)
     val filterMode = when (config.scalingMode) {
         ScreenEffectsConfig.SCALING_MODE_NEAREST -> 1
         else -> 0

@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <list>
+#include <memory>
+#include "BlurBarsVulkan.h"
 #include <vulkan/vulkan_android.h>
 struct VkTable {
 
@@ -202,6 +204,8 @@ public:
     void loadDeviceDispatch();
 
     void setFilterMode(int mode);
+    void setBlurBars(bool enabled, float radius, float edgeWidth, float brightness);
+    void setBlurBarsContentSize(int width,int height) { blurBarsContentWidth.store(width); blurBarsContentHeight.store(height); }
     void setSwapRB(bool enabled);
     void setEffect(int effectId, float sharpness, int effectMask, float brightness, float contrast, float gamma);
     void setPresentMode(VkPresentModeKHR mode);
@@ -240,6 +244,11 @@ private:
     void* adrenotoolsHandle = nullptr;
     int filterMode = 0;
     bool swapRB = false;
+    std::unique_ptr<BlurBarsVulkan> blurBars;
+    VkPipeline blurBarsScenePipeline = VK_NULL_HANDLE;
+    std::atomic<bool> blurBarsEnabled{false};
+    std::atomic<int> blurBarsContentWidth{0}, blurBarsContentHeight{0};
+    std::atomic<float> blurBarsRadius{48.f}, blurBarsWidth{0.12f}, blurBarsBrightness{0.75f};
     int activeEffectId = 0;
     float activeSharpness = 1.0f;
     int activeEffectMask = 0;
@@ -412,7 +421,7 @@ private:
     void createSwapchain();
     void createRenderPass();
     void createDSLayout();
-    void createPipeline(bool blend, VkPipeline& out);
+    void createPipeline(bool blend, VkPipeline& out, VkRenderPass compatiblePass = VK_NULL_HANDLE);
     void createFramebuffers();
     void createCmdPool();
     void createSampler();

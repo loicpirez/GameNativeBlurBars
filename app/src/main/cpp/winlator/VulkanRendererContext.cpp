@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 #include <inttypes.h>
 #include <dlfcn.h>
 #include "window_vert.h"
@@ -30,6 +31,8 @@ VulkanRendererContext::~VulkanRendererContext() {
     if (renderThread.joinable()) renderThread.join();
     std::lock_guard<std::mutex> lk(renderMutex);
     vk_.DeviceWaitIdle(device);
+    if (blurBarsScenePipeline) vk_.DestroyPipeline(device,blurBarsScenePipeline,nullptr);
+    blurBars.reset();
     for (auto& [id, wt] : texMap) destroyWinTex(wt);
     texMap.clear();
     
@@ -448,7 +451,7 @@ VkShaderModule VulkanRendererContext::makeShader(const uint32_t* code, size_t sz
     return m;
 }
 
-void VulkanRendererContext::createPipeline(bool blend, VkPipeline& out) {
+void VulkanRendererContext::createPipeline(bool blend, VkPipeline& out, VkRenderPass compatiblePass) {
     if (pipeLayout==VK_NULL_HANDLE) {
         VkPushConstantRange pc{}; pc.stageFlags=VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT;
         pc.size=sizeof(WindowPushConstants);
@@ -474,7 +477,7 @@ void VulkanRendererContext::createPipeline(bool blend, VkPipeline& out) {
     VkGraphicsPipelineCreateInfo pi{}; pi.sType=VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.stageCount=2; pi.pStages=stages; pi.pVertexInputState=&vi; pi.pInputAssemblyState=&ia;
     pi.pViewportState=&vp; pi.pRasterizationState=&rast; pi.pMultisampleState=&ms;
-    pi.pColorBlendState=&cb; pi.pDynamicState=&ds; pi.layout=pipeLayout; pi.renderPass=renderPass; pi.subpass=0;
+    pi.pColorBlendState=&cb; pi.pDynamicState=&ds; pi.layout=pipeLayout; pi.renderPass=compatiblePass?compatiblePass:renderPass; pi.subpass=0;
     if (vk_.CreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&pi,nullptr,&out)!=VK_SUCCESS) throw std::runtime_error("pipeline");
     vk_.DestroyShaderModule(device,frag,nullptr); vk_.DestroyShaderModule(device,vert,nullptr);
 }
@@ -871,6 +874,29 @@ void VulkanRendererContext::recordCmdBuf(VkCommandBuffer cb, VkFramebuffer targe
     rpi.renderArea={{0,0},tgtExt};
     VkClearValue clr={{{0.f,0.f,0.f,1.f}}}; rpi.clearValueCount=1; rpi.pClearValues=&clr;
 
+    int contentW=blurBarsContentWidth.load(), contentH=blurBarsContentHeight.load();
+    BlurBarsVulkan::Rect barsRect=BlurBarsVulkan::sceneRect(ox,oy,sx,sy,cw,ch,
+        contentW>0?float(contentW):cw,contentH>0?float(contentH):ch);
+    bool decorate = blurBarsEnabled.load() && !toXr && !draws.empty()
+        && barsRect.right>barsRect.left && barsRect.bottom>barsRect.top
+        && (barsRect.left>0.f || barsRect.top>0.f || barsRect.right<1.f || barsRect.bottom<1.f);
+    if (decorate) {
+        try {
+            if (!blurBars) {
+                VkPhysicalDeviceMemoryProperties mem{};
+                vk_.GetPhysicalDeviceMemoryProperties(physicalDevice,&mem);
+                blurBars=std::make_unique<BlurBarsVulkan>(device,vk_.GetDeviceProcAddr,mem,swapchainFmt);
+            }
+            blurBars->resize(tgtExt.width,tgtExt.height);
+            if (!blurBarsScenePipeline) createPipeline(true,blurBarsScenePipeline,blurBars->renderPass());
+        } catch (const std::exception& error) {
+            RLOG_E("Blur bars unavailable: %s",error.what());
+            decorate=false;
+        }
+    }
+    VkRenderPassBeginInfo finalTarget=rpi;
+    if (decorate) { rpi.renderPass=blurBars->renderPass(); rpi.framebuffer=blurBars->sceneFramebuffer(currentFrame); }
+
     vk_.CmdBeginRenderPass(cb, &rpi, VK_SUBPASS_CONTENTS_INLINE);
     // The immersive quad flips vertically to suit the per-window game buffers, so the scene
     // target must match their orientation: render it upside down via a negative viewport.
@@ -880,7 +906,7 @@ void VulkanRendererContext::recordCmdBuf(VkCommandBuffer cb, VkFramebuffer targe
     vk_.CmdSetViewport(cb, 0, 1, &vp);
     VkRect2D sc{{0,0},tgtExt}; vk_.CmdSetScissor(cb, 0, 1, &sc);
 
-    vk_.CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vk_.CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, decorate?blurBarsScenePipeline:pipeline);
     for (auto& d : draws) {
         if (d.ds==VK_NULL_HANDLE) continue;
         vk_.CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout, 0, 1, &d.ds, 0, nullptr);
@@ -902,6 +928,16 @@ void VulkanRendererContext::recordCmdBuf(VkCommandBuffer cb, VkFramebuffer targe
         pc.outH = std::max(1.0f, (float)d.h * sy / ch * (float)tgtExt.height);
         vk_.CmdPushConstants(cb, pipeLayout, VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pc), &pc);
         vk_.CmdDraw(cb, 4, 1, 0, 0);
+    }
+
+    if (decorate) {
+        vk_.CmdEndRenderPass(cb);
+        blurBars->blur(cb,currentFrame,barsRect,blurBarsRadius.load());
+        vk_.CmdBeginRenderPass(cb,&finalTarget,VK_SUBPASS_CONTENTS_INLINE);
+        blurBars->composite(cb,currentFrame,barsRect,blurBarsWidth.load(),blurBarsBrightness.load(),finalTarget.renderPass);
+        // Cursor stays a single sharp overlay, absent from the sampled scene.
+        vk_.CmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline);
+        vk_.CmdSetViewport(cb,0,1,&vp); vk_.CmdSetScissor(cb,0,1,&sc);
     }
 
     if (cursorDrawn) {
@@ -1585,6 +1621,15 @@ bool VulkanRendererContext::reattachSurface(ANativeWindow* newWindow) {
 
 void VulkanRendererContext::setTransform(float ox, float oy, float sx, float sy) {
     { std::lock_guard<std::mutex> lk(renderMutex); sceneOffsetX=ox;sceneOffsetY=oy;sceneScaleX=sx;sceneScaleY=sy; }
+    needsRender.store(true); dirtyCV.notify_one();
+}
+
+void VulkanRendererContext::setBlurBars(bool enabled,float radius,float edgeWidth,float brightness) {
+    auto finiteOr=[](float v,float fallback) { return std::isfinite(v)?v:fallback; };
+    blurBarsRadius.store(std::clamp(finiteOr(radius,48.f),0.f,120.f));
+    blurBarsWidth.store(std::clamp(finiteOr(edgeWidth,0.12f),0.01f,0.5f));
+    blurBarsBrightness.store(std::clamp(finiteOr(brightness,0.75f),0.f,1.f));
+    blurBarsEnabled.store(enabled);
     needsRender.store(true); dirtyCV.notify_one();
 }
 

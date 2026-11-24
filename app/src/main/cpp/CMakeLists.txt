@@ -6,11 +6,15 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wno-unused-function -Wimplicit-function
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -s")
 
 #add_subdirectory(proot)
+option(GAMENATIVE_VULKAN_ONLY "Build the Vulkan compositor without unrelated native modules" OFF)
+if(NOT GAMENATIVE_VULKAN_ONLY)
 add_subdirectory(virglrenderer)
-add_subdirectory(lsfg-vk-android/thirdparty/dxbc EXCLUDE_FROM_ALL)
 add_subdirectory(patchelf)
+endif()
+add_subdirectory(lsfg-vk-android/thirdparty/dxbc EXCLUDE_FROM_ALL)
 add_subdirectory(extras/adrenotools)
 
+if(NOT GAMENATIVE_VULKAN_ONLY)
 add_library(winlator SHARED
             winlator/drawable.c
             winlator/sysvshared_memory.c
@@ -28,11 +32,14 @@ target_link_libraries(winlator
                       GLESv3)
 
 target_link_options(winlator PRIVATE -Wl,-z,max-page-size=16384)
+endif()
+
+find_program(GLSLANG_VALIDATOR NAMES glslangValidator glslang REQUIRED)
 
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/window_vert.h
-    COMMAND glslangValidator -V --vn window_vert_code -x
+    COMMAND ${GLSLANG_VALIDATOR} -V --vn window_vert_code -x
             -o ${CMAKE_CURRENT_BINARY_DIR}/window_vert.h
             ${CMAKE_CURRENT_SOURCE_DIR}/winlator/window.vert
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/winlator/window.vert
@@ -40,13 +47,25 @@ add_custom_command(
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/window_frag.h
-    COMMAND glslangValidator -V --vn window_frag_code -x
+    COMMAND ${GLSLANG_VALIDATOR} -V --vn window_frag_code -x
             -o ${CMAKE_CURRENT_BINARY_DIR}/window_frag.h
             ${CMAKE_CURRENT_SOURCE_DIR}/winlator/window.frag
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/winlator/window.frag
 )
 
+foreach(stage vert frag)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/blur_bars_${stage}.h
+        COMMAND ${GLSLANG_VALIDATOR} -V --vn blur_bars_${stage}_code -x
+                -o ${CMAKE_CURRENT_BINARY_DIR}/blur_bars_${stage}.h
+                ${CMAKE_CURRENT_SOURCE_DIR}/winlator/blur_bars.${stage}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/winlator/blur_bars.${stage})
+endforeach()
+
 add_library(vulkan_renderer SHARED
+            winlator/BlurBarsVulkan.cpp
+            ${CMAKE_CURRENT_BINARY_DIR}/blur_bars_vert.h
+            ${CMAKE_CURRENT_BINARY_DIR}/blur_bars_frag.h
             winlator/vulkan_jni.cpp
             winlator/VulkanRendererContext.cpp
             winlator/VulkanRendererScanout.cpp

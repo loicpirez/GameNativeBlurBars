@@ -462,6 +462,7 @@ fun ScreenEffectsTabContent(
     scrollState: ScrollState = rememberScrollState(),
 ) {
     val initialConfig = remember(renderer, container) { loadScreenEffectsConfig(container) }
+    var blurBarsConfig by remember(renderer, container) { mutableStateOf(initialConfig) }
 
     val sanitizedInitialMode = if (initialConfig.scalingMode in VULKAN_SUPPORTED_SCALING_MODES) {
         initialConfig.scalingMode
@@ -501,6 +502,7 @@ fun ScreenEffectsTabContent(
     }
 
     LaunchedEffect(
+        blurBarsConfig,
         scalingMode,
         fsrSharpnessLevel,
         brightness,
@@ -513,6 +515,10 @@ fun ScreenEffectsTabContent(
         enableNTSC,
     ) {
         val config = initialConfig.copy(
+            enableBlurBars = blurBarsConfig.enableBlurBars,
+            blurBarsRadius = blurBarsConfig.blurBarsRadius,
+            blurBarsWidth = blurBarsConfig.blurBarsWidth,
+            blurBarsBrightness = blurBarsConfig.blurBarsBrightness,
             scalingMode = scalingMode,
             fsrSharpnessLevel = fsrSharpnessLevel,
             brightness = brightness,
@@ -533,6 +539,7 @@ fun ScreenEffectsTabContent(
     }
 
     fun resetEffects() {
+        blurBarsConfig = ScreenEffectsConfig()
         scalingMode = ScreenEffectsConfig.SCALING_MODE_NONE
         fsrSharpnessLevel = ScreenEffectsConfig.FSR_DEFAULT_LEVEL
         brightness = 0f
@@ -606,6 +613,9 @@ fun ScreenEffectsTabContent(
             )
         }
 
+        Spacer(modifier = Modifier.height(20.dp))
+
+        BlurBarsControls(blurBarsConfig) { blurBarsConfig = it }
         Spacer(modifier = Modifier.height(20.dp))
 
         OptionSectionHeader(text = stringResource(R.string.screen_effects_color_adjustments))
@@ -701,6 +711,7 @@ fun ScreenEffectsPanel(
     container: Container? = null,
 ) {
     val initialConfig = remember(renderer, container) { loadScreenEffectsConfig(container) }
+    var blurBarsConfig by remember(renderer, container) { mutableStateOf(initialConfig) }
     val firstItemFocusRequester = remember { FocusRequester() }
 
     var brightness by remember(renderer, container) {
@@ -728,8 +739,12 @@ fun ScreenEffectsPanel(
         mutableStateOf(initialConfig.enableNTSC)
     }
 
-    LaunchedEffect(brightness, contrast, gamma, enableToon, enableFXAA, enableVivid, enableCRT, enableNTSC) {
+    LaunchedEffect(blurBarsConfig, brightness, contrast, gamma, enableToon, enableFXAA, enableVivid, enableCRT, enableNTSC) {
         val config = initialConfig.copy(
+            enableBlurBars = blurBarsConfig.enableBlurBars,
+            blurBarsRadius = blurBarsConfig.blurBarsRadius,
+            blurBarsWidth = blurBarsConfig.blurBarsWidth,
+            blurBarsBrightness = blurBarsConfig.blurBarsBrightness,
             brightness = brightness,
             contrast = contrast,
             gamma = gamma,
@@ -746,6 +761,7 @@ fun ScreenEffectsPanel(
     }
 
     fun resetEffects() {
+        blurBarsConfig = ScreenEffectsConfig()
         brightness = 0f
         contrast = 0f
         gamma = 1.0f
@@ -884,6 +900,9 @@ fun ScreenEffectsPanel(
                         .padding(vertical = 12.dp),
                 ) {
                     OptionSectionHeader(text = stringResource(R.string.screen_effects_color_adjustments))
+
+                    BlurBarsControls(blurBarsConfig) { blurBarsConfig = it }
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     ScreenEffectAdjustmentRow(
                         title = stringResource(R.string.screen_effects_brightness),
@@ -1462,4 +1481,37 @@ private fun normalizedProgress(
 private fun formatPercent(value: Float): String {
     val rounded = value.toInt()
     return if (rounded > 0) "+${rounded}%" else "${rounded}%"
+}
+
+@Composable
+private fun BlurBarsControls(config: ScreenEffectsConfig, onChange: (ScreenEffectsConfig) -> Unit) {
+    OptionSectionHeader(text = stringResource(R.string.blur_bars_title))
+    ScreenEffectToggleRow(
+        title = stringResource(R.string.blur_bars_enable),
+        subtitle = stringResource(R.string.blur_bars_description),
+        enabled = config.enableBlurBars,
+        onToggle = { onChange(config.copy(enableBlurBars = !config.enableBlurBars)) },
+    )
+    if (!config.enableBlurBars) return
+    ScreenEffectAdjustmentRow(
+        title = stringResource(R.string.blur_bars_radius),
+        valueText = "${config.blurBarsRadius.roundToInt()} px",
+        progress = normalizedProgress(config.blurBarsRadius, 0f, 120f),
+        onDecrease = { onChange(config.copy(blurBarsRadius = (config.blurBarsRadius - 4f).coerceAtLeast(0f))) },
+        onIncrease = { onChange(config.copy(blurBarsRadius = (config.blurBarsRadius + 4f).coerceAtMost(120f))) },
+    )
+    ScreenEffectAdjustmentRow(
+        title = stringResource(R.string.blur_bars_width),
+        valueText = formatPercent(config.blurBarsWidth),
+        progress = normalizedProgress(config.blurBarsWidth, 1f, 50f),
+        onDecrease = { onChange(config.copy(blurBarsWidth = (config.blurBarsWidth - 1f).coerceAtLeast(1f))) },
+        onIncrease = { onChange(config.copy(blurBarsWidth = (config.blurBarsWidth + 1f).coerceAtMost(50f))) },
+    )
+    ScreenEffectAdjustmentRow(
+        title = stringResource(R.string.blur_bars_brightness),
+        valueText = formatPercent(config.blurBarsBrightness),
+        progress = normalizedProgress(config.blurBarsBrightness, 0f, 100f),
+        onDecrease = { onChange(config.copy(blurBarsBrightness = (config.blurBarsBrightness - 5f).coerceAtLeast(0f))) },
+        onIncrease = { onChange(config.copy(blurBarsBrightness = (config.blurBarsBrightness + 5f).coerceAtMost(100f))) },
+    )
 }

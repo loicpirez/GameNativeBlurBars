@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="blur_bars_title">Blurred aspect-ratio bars</string>
+    <string name="blur_bars_enable">Blur the unused margins</string>
+    <string name="blur_bars_description">Vulkan display only. Keeps the game sharp and proportional; extend its edges into unused margins. Use Fit or FSR (aspect ratio). Not Gamescope or immersive XR.</string>
+    <string name="blur_bars_radius">Blur radius (at 1080p)</string>
+    <string name="blur_bars_width">Sampled edge width</string>
+    <string name="blur_bars_brightness">Bar brightness</string>
+</resources>
