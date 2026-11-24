@@ -73,6 +73,25 @@ enregistré, y compris désactivé, reste respecté. Les trois interrupteurs dan
 Paramètres → Interface permettent toujours de revenir au comportement souhaité.
 Les comptes, conteneurs et sauvegardes sont conservés.
 
+## Installation à côté de l’original — version .5
+
+Le package est désormais **app.gamenative.blurbars**, affiché **GameNative Blur
+Bars**. Il cohabite avec l’application originale ; aucune désinstallation de
+celle-ci n’est nécessaire. La racine publique propre au fork est
+**GameNativeBlurBars**, afin de ne pas importer automatiquement la bibliothèque
+originale. Les dossiers choisis explicitement restent ajoutables.
+
+La variante **legacy** conserve glibc et Proton bionic. La variante modern est
+réservée aux conteneurs bionic. Pour importer un conteneur existant, copier son
+préfixe réel, son .container et ses profils de commandes référencés, puis fournir
+les runtimes correspondants. Un simple export JSON ne copie pas Wine, le registre,
+les DLL, les polices et les sauvegardes privées.
+
+Les références privées de l’ancien package dans les lecteurs et variables sont
+résolues vers le fork au lancement, sans réécrire le JSON importé. Les chemins
+de jeux publics restent identiques. Les chemins IPC et cache utilisent le
+répertoire du package courant. Une copie ne constitue pas une validation en jeu.
+
 ## Reconstruire
 
 Le dépôt suit le modèle amont : les bibliothèques natives sont fournies dans

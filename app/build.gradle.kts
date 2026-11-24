@@ -65,7 +65,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.gamenative"
+        applicationId = "app.gamenative.blurbars"
 
         minSdk = 26
 
@@ -73,8 +73,8 @@ android {
         buildConfigField("boolean", "XR_BUILD", "false")
         buildConfigField("boolean", "MODERN_XR", "false")
 
-        versionCode = 25
-        versionName = "1.4.1-blur-bars.4"
+        versionCode = 26
+        versionName = "1.4.1-blur-bars.5"
 
         buildConfigField("boolean", "GOLD", "false")
         fun secret(name: String) =

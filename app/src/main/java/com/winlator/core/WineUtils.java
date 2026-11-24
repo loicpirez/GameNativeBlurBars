@@ -46,7 +46,7 @@ public abstract class WineUtils {
                 missingDrives += "D:" + android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
             }
             if (!currentDrives.contains("E:")) {
-                missingDrives += "E:/data/data/app.gamenative/storage";
+                missingDrives += "E:" + new File(context.getDataDir(), "storage").getAbsolutePath();
             }
             String updatedDrives = missingDrives + currentDrives;
             container.setDrives(updatedDrives);
@@ -56,9 +56,9 @@ public abstract class WineUtils {
 
         String gameDirectoryPath = null;
         for (String[] drive : container.drivesIterator()) {
-            File linkTarget = new File(drive[1]);
+            File linkTarget = new File(app.gamenative.utils.ForkPaths.originalPrivatePath(context, drive[1]));
             String path = linkTarget.getAbsolutePath();
-            if (!linkTarget.isDirectory() && path.endsWith("/app.gamenative/storage")) {
+            if (!linkTarget.isDirectory() && path.equals(new File(context.getDataDir(), "storage").getAbsolutePath())) {
                 linkTarget.mkdirs();
                 FileUtils.chmod(linkTarget, 0771);
             }

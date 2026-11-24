@@ -10,8 +10,12 @@ Artworks Custom Games rafraîchis dans la bibliothèque et les fiches ; réglage
 du flou accessibles avant lancement et comme valeurs par défaut.
 [Utilisation, construction et portée des tests](docs/BLUR-BARS.md).
 
-Version expérimentale ARM64 `1.4.1-blur-bars.4` ; sortie Vulkan GameNative,
-hors Gamescope/SurfaceFlinger/OpenGL/XR immersif. Les informations amont suivent.
+Version expérimentale ARM64 `1.4.1-blur-bars.5` ; sortie Vulkan GameNative,
+hors Gamescope/SurfaceFlinger/OpenGL/XR immersif. Depuis .5, identifiant Android
+`app.gamenative.blurbars` et nom « GameNative Blur Bars » pour cohabiter avec
+l’original. La variante legacy conserve le support glibc ; sa racine publique
+est GameNativeBlurBars pour éviter de scanner automatiquement les jeux de
+l’application originale. Les informations amont suivent.
 
 ---
 

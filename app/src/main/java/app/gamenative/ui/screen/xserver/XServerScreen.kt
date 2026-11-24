@@ -4710,7 +4710,7 @@ private fun setupXEnvironment(
         guestProgramLauncherComponent.setSteamType(container.getSteamType())
         if (!container.isLaunchRealSteam && !container.isLaunchBionicSteam) envVars.put("PROTON_DISABLE_LSTEAMCLIENT", "1")
 
-        envVars.putAll(container.envVars)
+        envVars.putAll(app.gamenative.utils.ForkPaths.originalPrivateReferences(context, container.envVars))
         if (container.isLoadMods && !bootToContainer && !testGraphics) ModDllOverrides.apply(container, envVars)
         immersiveHooks?.windowsVr?.afterContainerEnvironmentMerged(envVars, container)
         envVars.remove("DXVK_FRAME_RATE")

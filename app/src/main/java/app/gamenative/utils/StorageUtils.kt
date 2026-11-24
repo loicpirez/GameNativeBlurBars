@@ -186,7 +186,7 @@ object StorageUtils {
         return result
     }
 
-    private const val PUBLIC_INSTALL_DIR_NAME = "GameNative"
+    private const val PUBLIC_INSTALL_DIR_NAME = "GameNativeBlurBars"
 
     /**
      * Maps an app-specific dir (<volume>/Android/data/<pkg>/files) to a public install root
